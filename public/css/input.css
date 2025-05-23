@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.invisible-scroll {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+.invisible-scroll::-webkit-scrollbar { 
+  display: none;  /* Safari and Chrome */
+}
+
+.material-symbols-outlined {
+  font-variation-settings:
+  'FILL' 0,
+  'wght' 400,
+  'GRAD' 0,
+  'opsz' 24
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.noise{
+  background-image: url("/img/noise-dark.png");
+}
+
+html::-webkit-scrollbar, div::-webkit-scrollbar {
+  width: 4px;
+}
+
+/* Track */
+html::-webkit-scrollbar-track, div::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Handle */
+html::-webkit-scrollbar-thumb, div::-webkit-scrollbar-thumb {
+  background: #47A992;
+}
+
+/* Handle on hover */
+html::-webkit-scrollbar-thumb:hover, div::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.no-scroll{
+  overflow: hidden;
+}
+
+.no-tailwind h1 {
+  font-size: 2.25rem; /* 36px */
+  line-height: 2.5rem; /* 40px */
+  font-weight: 700;
+}
+.no-tailwind h2 {
+  font-size: 1.875rem; /* 30px */
+  line-height: 2.25rem; /* 36px */
+  font-weight: 700;
+}
+.no-tailwind h3 {
+  font-size: 1.5rem; /* 24px */
+  line-height: 2rem; /* 32px */
+  font-weight: 700;
+}
+.no-tailwind h4 {
+  font-size: 1.25rem; /* 20px */
+  line-height: 1.75rem; /* 28px */
+  font-weight: 700;
+}
+.no-tailwind h5 {
+  font-size: 1rem; /* 16px */
+  line-height: 1.5rem; /* 24px */
+  font-weight: 700;
+}
+.no-tailwind h6 {
+  font-size: 0.875rem; /* 14px */
+  line-height: 1.25rem; /* 20px */
+  font-weight: 700;
+}
+.no-tailwind a {
+  color: #3b82f6; 
+  text-decoration: none;
+}
+.no-tailwind a:hover {
+  text-decoration: underline;
+}
+.no-tailwind ul {
+  list-style-type: disc;
+  padding-left: 1.25rem; 
+}
+.no-tailwind ol {
+  list-style-type: decimal;
+  padding-left: 1.25rem; 
+}
+.no-tailwind li {
+  margin-bottom: 0.5rem; 
+}
+.no-tailwind p {
+  display: block;
+  margin: 1em 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.grid-market{
+  grid-template-columns: max-content 1fr;
+}
+
+#popup-overview *{
+  background-color: transparent !important;
+}
