@@ -1,7 +1,7 @@
 import Comic from "../models/Comic";
 import {Request, Response} from "express"
 import { validationResult } from "express-validator";
-import { Op } from "sequelize";
+import { Op, Sequelize } from "sequelize";
 import Chapter from "../models/Chapter";
 import cloudinary from "../config/coudinary";
 import { Readable } from "stream";
@@ -12,35 +12,122 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import Author from "../models/Author";
 import Genre from "../models/Genre";
 import sharp from "sharp";
+import { sequelize } from "../models";
 
 export const GetAllComics = async (req: Request, res: Response) => {
-    try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
-      const offset = (page - 1) * limit;
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const offset = (page - 1) * limit;
 
-      const { count, rows: comics } = await Comic.findAndCountAll({
-        limit,
-        offset,
-        order: [['createdAt', 'DESC']],
-        include: {model: Chapter, as: "chapters", limit: 1}
-      });
+    const { title, author, genre } = req.query;
 
-      return res.status(200).json({
-        data: comics,
-        pagination: {
-          total: count,
-          page,
-          totalPages: Math.ceil(count / limit)
-        }
+    const includeOptions: any[] = [
+      {
+        model: Chapter,
+        as: 'chapters',
+        limit: 1,
+        order: [['chapterNumber', 'DESC']],
+      }
+    ];
+
+    if (author) {
+      includeOptions.push({
+        model: Author,
+        as: 'authors',
+        where: {
+          name: { [Op.like]: `%${author}%` },
+        },
+        required: true, // bikin filter aktif
       });
-    } catch (error) {
-      console.error('Error in GetAllComics:', error);
-      return res.status(500).json({
-        message: "Terjadi kesalahan server",
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    } else {
+      includeOptions.push({
+        model: Author,
+        as: 'authors',
       });
     }
+
+    if (genre) {
+      includeOptions.push({
+        model: Genre,
+        as: 'genres',
+        where: {
+          name: { [Op.like]: `%${genre}%` },
+        },
+        required: true,
+      });
+    } else {
+      includeOptions.push({
+        model: Genre,
+        as: 'genres',
+      });
+    }
+
+    const whereClause: any = {};
+    if (title) {
+      whereClause.title = { [Op.like]: `%${title}%` };
+    }
+
+    const { count, rows } = await Comic.findAndCountAll({
+      where: whereClause,
+      limit,
+      offset,
+      order: [['createdAt', 'DESC']],
+      distinct: true,
+      include: includeOptions,
+    });
+
+    // Buang chapters kosong
+    const comics = rows.filter((comic: any) => {
+      const comicData = comic.toJSON();
+      if (comicData.chapters && comicData.chapters.length !== 0) {
+        return comicData;
+      }
+    });
+
+    return res.status(200).json({
+      data: comics,
+      pagination: {
+        total: count,
+        page,
+        totalPages: Math.ceil(count / limit),
+      },
+    });
+  } catch (error) {
+    console.error('Error in GetAllComics:', error);
+    return res.status(500).json({
+      message: 'Terjadi kesalahan server',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+};
+
+export const GetRandomComics = async (req: Request, res: Response) => {
+  try {
+    const count = parseInt(req.query.count as string) || 10; // Jumlah komik random, default 5
+
+    const comics = await Comic.findAll({
+      limit: count,
+      order: sequelize.random(),
+      include: {
+        model: Chapter,
+        as: 'chapters',
+        limit: 1,
+        order: [['chapterNumber', 'DESC']]
+      }
+    });
+
+    return res.status(200).json({
+      data: comics,
+      count: comics.length
+    });
+  } catch (error) {
+    console.error('Error in GetRandomComics:', error);
+    return res.status(500).json({
+      message: 'Terjadi kesalahan server',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
 };
 
 export const GetComicById = async (req: Request, res: Response) => {
@@ -200,6 +287,54 @@ export const AddComic = async (req: Request, res: Response) => {
     return res.status(500).json({
       message: "Terjadi kesalahan server",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+export const GetAllGenres = async (req: Request, res: Response) => {
+  try {
+    const genres = await Genre.findAll({
+      attributes: {include: [[
+          Sequelize.literal(`(
+            SELECT COUNT(DISTINCT \`ComicGenres\`.\`comicId\`)
+            FROM \`ComicGenres\`
+            WHERE \`ComicGenres\`.\`genreId\` = \`Genre\`.\`id\`
+          )`),
+          'comicCount'
+        ]]},
+      order: [['name', 'ASC']],
+    });
+
+    return res.status(200).json({ data: genres });
+  } catch (error: any) {
+    console.error("Error in GetAllGenres:", error);
+    return res.status(500).json({
+      message: "Terjadi kesalahan server",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+};
+
+export const GetAllAuthors = async (req: Request, res: Response) => {
+  try {
+    const author = await Author.findAll({
+      attributes: {include: [[
+          Sequelize.literal(`(
+            SELECT COUNT(DISTINCT \`ComicAuthors\`.\`comicId\`)
+            FROM \`ComicAuthors\`
+            WHERE \`ComicAuthors\`.\`authorId\` = \`Author\`.\`id\`
+          )`),
+          'comicCount'
+        ]]},
+      order: [['name', 'ASC']],
+    });
+
+    return res.status(200).json({ data: author });
+  } catch (error: any) {
+    console.error("Error in GetAllAuthors:", error);
+    return res.status(500).json({
+      message: "Terjadi kesalahan server",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
 };

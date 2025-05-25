@@ -25,7 +25,6 @@ Author.init({
   slug: {
     type: DataTypes.STRING,
     allowNull: false,
-    unique: true,
   },
   bio: DataTypes.TEXT,
   avatar: DataTypes.STRING,

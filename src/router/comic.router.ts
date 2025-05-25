@@ -6,12 +6,18 @@ import {
   UpdateComic,
   DeleteComic,
   AddComic,
-  GetComicById
+  GetComicById,
+  GetRandomComics,
+  GetAllGenres,
+  GetAllAuthors
 } from "../controllers/comic.controller";
 
 const comicRouter = express.Router();
 
 comicRouter.get("/", GetAllComics)
+comicRouter.get("/random", GetRandomComics)
+comicRouter.get("/genres", GetAllGenres)
+comicRouter.get("/authors", GetAllAuthors)
 comicRouter.get("/:id", GetComicById)
 comicRouter.get("/:id/chapters", GetComicChapterById)
 
